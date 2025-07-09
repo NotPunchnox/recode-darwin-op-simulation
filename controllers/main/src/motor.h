@@ -45,6 +45,8 @@ typedef struct {
     HeadMotors head;
 } RobotMotors;
 
+const char *motorNames[20];
+
 // Fonction pour init les moteurs
 int initMotor(RobotMotors *motors);
 

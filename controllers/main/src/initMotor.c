@@ -1,6 +1,6 @@
 #include "motor.h"
 
-static const char *motorNames[20] = {
+const char *motorNames[20] = {
     "ShoulderR", "ShoulderL", "ArmUpperR", "ArmUpperL", "ArmLowerR",
     "ArmLowerL", "PelvYR", "PelvYL", "PelvR", "PelvL",
     "LegUpperR", "LegUpperL", "LegLowerR", "LegLowerL", "AnkleR",
