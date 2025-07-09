@@ -1,3 +1,6 @@
+#include <webots/motor.h>
+#include <stdio.h>
+
 void moveMotor(double degree, WbDeviceTag motor) {
   // convertir les degrées en radians
   double radian = degree * M_PI / 180.0;
@@ -7,10 +10,10 @@ void moveMotor(double degree, WbDeviceTag motor) {
   double min_pos = wb_motor_get_min_position(motor);
 
   if (radian > max_pos || radian < min_pos) {
-    fprintf(stderr, "Error: Position out of bounds. Max: %f, Min: %f, Requested: %f\n", max_pos, min_pos, radian);
+    printf("Error: Position out of bounds. Max: %f, Min: %f, Requested: %f\n", max_pos, min_pos, radian);
     return;
   }
 
   // Positionner le moteur
-  wb_motor_set_position(motor, position);
+  wb_motor_set_position(motor, radian);
 }

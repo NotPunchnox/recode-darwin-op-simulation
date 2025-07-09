@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "src/moveMotor.h"
+
+
 #define TIME_STEP 32
-#define MAX_POS 1.5708  // 90°
-#define MIN_POS -1.5708 // -90°
 
 static const char *motorNames[20] = {
   "ShoulderR", "ShoulderL", "ArmUpperR", "ArmUpperL", "ArmLowerR",
@@ -32,15 +33,10 @@ int main() {
   wb_keyboard_enable(TIME_STEP);
 
   // Bouger le bras droit (left-arm)
-  // Rotation progressive + logs
-  printf("min position: %f\n", wb_motor_get_min_position(motor[0]));
-  printf("max position: %f\n", wb_motor_get_max_position(motor[0]));
-
-  wb_motor_set_position(motor[0], 0.1);
-  wb_motor_set_position(motor[2], 0.1);
-  wb_motor_set_position(motor[4], 0.1);
-  
-
+  moveMotor(90, motor[0]);
+  // wb_motor_set_position(motor[0], 0.1);
+  // wb_motor_set_position(motor[2], 0.1);
+  // wb_motor_set_position(motor[4], 0.1);
 
 
   wb_robot_cleanup();
