@@ -1,0 +1,77 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/robotis/darwin-op/protos/RobotisOp2.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/Floor.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/appearances/protos/Parquetry.proto"
+
+WorldInfo {
+  info [
+    "ROBOTIS OP2 robot."
+    "The ROBOTIS OP2 robot simulation model can be programmed using the ROBOTIS OP2 motions files and the ROBOTIS OP2 walk control library."
+  ]
+  title "ROBOTIS OP2"
+  basicTimeStep 16
+}
+Viewpoint {
+  orientation -0.31382980097199525 -0.06840174666021676 0.9470121736681685 3.548693393409691
+  position 1.1388418767973751 0.6085723296377354 1.192721880024891
+  follow "ROBOTIS OP2"
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RobotisOp2 {
+  hidden position_0_0 4.9418242486731036e-08
+  hidden position_0_1 -2.255974217797357e-05
+  hidden position_0_2 -1.7954864398888308e-05
+  hidden position_0_3 0.721865828313261
+  hidden position_0_4 0.09999992280082914
+  hidden rotation_10 0.5774169168665835 0.5773169424667373 0.5773169424650093 2.0944000285299884
+  hidden position_10_0 0.17357661166980368
+  hidden rotation_11 1 0 0 0.6118233883301942
+  hidden rotation_15 0.5773477972849406 0.5773514084589959 0.5773516018169873 2.0944278460453933
+  hidden position_15_0 -0.006153002089768343
+  hidden rotation_16 0 0 1 0.006153002089772178
+  hidden position_16_0 -0.08034979060226755
+  hidden rotation_17 0.9999999999999999 0 0 0.08034979060226738
+  hidden position_17_0 -0.93092881046362
+  hidden rotation_18 1 0 0 0.9309288104636197
+  hidden position_18_0 -0.5246430653106238
+  hidden rotation_19 -1 0 0 0.5246430653106234
+  hidden position_19_0 -0.013829609968569988
+  hidden rotation_20 0 0 -1 0.0138296099685581
+  hidden rotation_21 0.5773193673329586 0.5773657432908528 0.5773656957046146 2.094427154043717
+  hidden position_21_0 0.0075726381269440295
+  hidden rotation_22 0 0 -1 0.00757263812694947
+  hidden position_22_0 0.09999808373047835
+  hidden rotation_23 1 0 0 0.09999808373047887
+  hidden position_23_0 0.9309170772919066
+  hidden rotation_24 1 0 0 0.9309170772919064
+  hidden position_24_0 0.524634067271471
+  hidden rotation_25 -1 0 0 0.5246340672714707
+  hidden position_25_0 0.013864677280116646
+  hidden rotation_26 0 0 1 0.013864677280123186
+  hidden rotation_27 0.6735482563984725 0.67354822598991 0.3044101403836978 2.5506565804948615
+  hidden position_27_0 0.3072464202099883
+  hidden rotation_28 0 0 0.9999999999999999 0.4781535797900114
+  hidden position_28_0 -0.2707977377561196
+  hidden rotation_29 -1 0 0 1.8415977377561195
+  hidden rotation_30 0.5571571013577947 0.557126662000799 0.6157806808389067 2.0376213448643004
+  hidden position_30_0 0.0999999420632185
+  hidden rotation_31 0 0 -1 0.8853999420632146
+  hidden position_31_0 0.09999999083605005
+  hidden rotation_32 -1 0 0 1.6707999908360507
+  translation -0.0680789539331405 -0.0012290281151157798 0.3088581644069922
+  rotation 0.014192307135963268 -0.9997339752721511 0.018181229460637275 0.5029953151033197
+  controller "main"
+  selfCollision TRUE
+}
+Floor {
+  size 1000 1000
+  tileSize 1 1
+  appearance Parquetry {
+  }
+}
