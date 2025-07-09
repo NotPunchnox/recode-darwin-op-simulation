@@ -20,13 +20,12 @@ void moveMotor(WbDeviceTag motor, double degree) {
       }
   }
 
-  if (is_right_side) {
-    degree = -degree;
-  }
-
-
   // convertir les degrées en radians
   double radian = degree * M_PI / 180.0;
+
+  if (is_right_side) {
+    radian = -radian;
+  }
 
   // Vérifier si la position est dans la limite ( max/min )
   double max_pos = wb_motor_get_max_position(motor);
