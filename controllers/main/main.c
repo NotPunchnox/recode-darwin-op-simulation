@@ -8,6 +8,46 @@
 
 #define TIME_STEP 32
 
+// Only 2d for this time
+void inverseKinematicLeg(double x, double y, double z) {
+     // cinématique inversée jambe
+    int femur = 9.3;
+    int tibia = 9.3;
+    double LF = 3.35;
+
+    double max_length = femur + tibia + LF;
+    
+    if (y > max_length) {
+        printf("Error: Position out of reach.\n");
+        return;
+    }
+
+    double original_x = x;
+    x = x - LF;
+
+    // Hypoténus formé par les coordonnées x;y
+    double h = sqrt(x * x + y * y);
+
+    // angle formé par les coordonnées x;y
+    double A1 = atan2(y, x);
+
+    // Angle formé près du sol
+    double A2 = acos((tibia * tibia + h * h - femur * femur) / (2 * tibia * h));
+
+    // angle coordonnées proche du bassin
+    double A3 = acos((femur * femur + h * h - tibia * tibia) / (2 * femur * h));
+
+    // angle coordonnées proche du bassin
+    double A4 = acos((y * y + h * h - x * x) / (2 * y * h));
+
+    // angle du genou
+    double A5 = acos((femur * femur + tibia * tibia - h * h) / (2 * femur * tibia));
+
+    double angleThigh = A3 + A4;
+    double angleKnee = A5;
+
+}
+
 
 int main() {
     wb_robot_init();
@@ -39,15 +79,15 @@ int main() {
     moveMotor(motors.pelvis.PelvL, 0);
 
     // jambes supérieures
-    moveMotor(motors.leg.LegUpperR, 25);
+    moveMotor(motors.leg.LegUpperR, 0);
     moveMotor(motors.leg.LegUpperL, 25);
 
     // jambes inférieures
-    moveMotor(motors.leg.LegLowerR, 20);
+    moveMotor(motors.leg.LegLowerR, 0);
     moveMotor(motors.leg.LegLowerL, 20);
 
     //chevilles
-    // moveMotor(motors.leg.AnkleR, 10);
+    moveMotor(motors.leg.AnkleR, 0);
     // moveMotor(motors.leg.AnkleL, 10);
 
     // pieds
@@ -59,7 +99,6 @@ int main() {
 
     // tête
     moveMotor(motors.head.Head, 20);
-
 
 
     // Simulation loop
