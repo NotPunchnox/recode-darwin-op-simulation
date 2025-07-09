@@ -28,8 +28,8 @@ int main() {
     moveMotor(motors.arm.ArmUpperL, 0);
 
     // bras inférieurs
-    moveMotor(motors.arm.ArmLowerR, -70);
-    moveMotor(motors.arm.ArmLowerL, 90);
+    moveMotor(motors.arm.ArmLowerR, 70);
+    moveMotor(motors.arm.ArmLowerL, 70);
 
     // Simulation loop
     while (wb_robot_step(TIME_STEP) != -1) {
