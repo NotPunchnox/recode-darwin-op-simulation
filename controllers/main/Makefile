@@ -35,7 +35,7 @@
 ###
 ### ---- C Sources ----
 ### if your program uses several C source files:
-C_SOURCES = main.c src/moveMotor.c
+C_SOURCES = main.c src/initMotor.c src/moveMotor.c
 ###
 ### ---- C++ Sources ----
 ### if your program uses several C++ source files:

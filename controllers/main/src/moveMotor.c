@@ -1,7 +1,7 @@
 #include <webots/motor.h>
 #include <stdio.h>
 
-void moveMotor(double degree, WbDeviceTag motor) {
+void moveMotor(WbDeviceTag motor, double degree) {
   // convertir les degrées en radians
   double radian = degree * M_PI / 180.0;
 

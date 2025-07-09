@@ -4,41 +4,43 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "src/moveMotor.h"
-
+#include "src/motor.h"
 
 #define TIME_STEP 32
 
-static const char *motorNames[20] = {
-  "ShoulderR", "ShoulderL", "ArmUpperR", "ArmUpperL", "ArmLowerR",
-  "ArmLowerL", "PelvYR", "PelvYL", "PelvR", "PelvL",
-  "LegUpperR", "LegUpperL", "LegLowerR", "LegLowerL", "AnkleR",
-  "AnkleL", "FootR", "FootL", "Neck", "Head"
-};
-
-
 
 int main() {
-  wb_robot_init();
+    wb_robot_init();
 
-  WbDeviceTag motor[20];
+    // Init motors
+    RobotMotors motors;
+    initMotor(&motors);
 
-  for (int i = 0; i < 20; i++) {
-    motor[i] = wb_robot_get_device(motorNames[i]);
-    if (motor[i] == 0) {
-      fprintf(stderr, "Error: Device '%s' not found.\n", motorNames[i]);
-      return -1;
+    wb_keyboard_enable(TIME_STEP);
+
+    // Initialiser les moteurs à leur position par défaut
+    // épaules
+    moveMotor(motors.arm.ShoulderR, 0);
+    moveMotor(motors.arm.ShoulderL, 0);
+
+    // bras supérieurs
+    moveMotor(motors.arm.ArmUpperR, 0);
+    moveMotor(motors.arm.ArmUpperL, 0);
+
+    // bras inférieurs
+    moveMotor(motors.arm.ArmLowerR, 30);
+    moveMotor(motors.arm.ArmLowerL, 0);
+
+    // Simulation loop
+    while (wb_robot_step(TIME_STEP) != -1) {
+        int key = wb_keyboard_get_key();
+        if (key == WB_KEYBOARD_UP) {
+            moveMotor(motors.arm.ShoulderL, wb_motor_get_target_position(motors.arm.ShoulderL) * 180.0 / M_PI + 10);
+        } else if (key == WB_KEYBOARD_DOWN) {
+            moveMotor(motors.arm.ShoulderL, wb_motor_get_target_position(motors.arm.ShoulderL) * 180.0 / M_PI - 10);
+        }
     }
-  }
-  wb_keyboard_enable(TIME_STEP);
 
-  // Bouger le bras droit (left-arm)
-  moveMotor(90, motor[0]);
-  // wb_motor_set_position(motor[0], 0.1);
-  // wb_motor_set_position(motor[2], 0.1);
-  // wb_motor_set_position(motor[4], 0.1);
-
-
-  wb_robot_cleanup();
-  return 0;
+    wb_robot_cleanup();
+    return 0;
 }
