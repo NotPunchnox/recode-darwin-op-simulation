@@ -20,7 +20,7 @@ struct Angles lastValidAngles = {0.0, 37.0, 0.0};
 // Only 2d for this time
 // Cinématique inverse
 struct Angles inverseKinematicARM(double x, double y, double z) {
-    struct Angles angles = lastValidAngles; // Initialiser avec les derniers angles valides
+    struct Angles angles = lastValidAngles;
     
     double biceps = 6.0;
     double avant_bras = 12.0;
@@ -32,13 +32,13 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     double distance = sqrt(y*y + z*z);
 
     if (distance > biceps + avant_bras) {
-        printf("Impossible de trouver une solution, la distance est trop grande.\n");
-        return lastValidAngles; // Retourne les derniers angles valides
+        // printf("Impossible de trouver une solution, la distance est trop grande.\n");
+        return lastValidAngles;
     }
 
     if (distance < fabs(biceps - avant_bras)) {
-        printf("Impossible de trouver une solution, la distance est trop petite.\n");
-        return lastValidAngles; // Retourne les derniers angles valides
+        // printf("Impossible de trouver une solution, la distance est trop petite.\n");
+        return lastValidAngles;
     }
 
     // Calculer l'angle du biceps avec vérification des bornes
