@@ -37,7 +37,7 @@ void moveMotor(WbDeviceTag motor, double degree) {
   double min_pos = wb_motor_get_min_position(motor);
 
   if (radian > max_pos || radian < min_pos) {
-    printf("Error: Position out of bounds. Max: %f, Min: %f, Requested: %f\n", (180 / M_PI) * max_pos, (180 / M_PI) * min_pos, degree);
+    // printf("Error: Position out of bounds. Max: %f, Min: %f, Requested: %f\n", (180 / M_PI) * max_pos, (180 / M_PI) * min_pos, degree);
     return;
   }
 

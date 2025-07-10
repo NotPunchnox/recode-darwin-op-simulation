@@ -14,11 +14,13 @@ struct Angles {
     double angleCoude;
 };
 
+// Variable globale pour conserver les derniers angles valides
+struct Angles lastValidAngles = {0.0, 37.0, 0.0};
 
 // Only 2d for this time
 // Cinématique inverse
 struct Angles inverseKinematicARM(double x, double y, double z) {
-    struct Angles angles = {0.0, 0.0, 0.0}; // Initialiser à 0
+    struct Angles angles = lastValidAngles; // Initialiser avec les derniers angles valides
     
     double biceps = 6.0;
     double avant_bras = 12.0;
@@ -31,12 +33,12 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
 
     if (distance > biceps + avant_bras) {
         printf("Impossible de trouver une solution, la distance est trop grande.\n");
-        return angles; // Retourne les angles initiaux
+        return lastValidAngles; // Retourne les derniers angles valides
     }
 
     if (distance < fabs(biceps - avant_bras)) {
         printf("Impossible de trouver une solution, la distance est trop petite.\n");
-        return angles;
+        return lastValidAngles; // Retourne les derniers angles valides
     }
 
     // Calculer l'angle du biceps avec vérification des bornes
@@ -53,12 +55,13 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     double a2 = acos(cos_a2) * 180.0 / M_PI;
     
     angles.angleEpaule = a2 - a1;
-
     angles.angleEpaule2 = 37;
+
+    // Sauvegarder les angles valides
+    lastValidAngles = angles;
 
     return angles;
 }
-
 
 int main() {
     wb_robot_init();
@@ -111,7 +114,7 @@ int main() {
     // tête
     moveMotor(motors.head.Head, 20);
 
-    double x = 0.0, y = 10.0, z = 0.0;
+    double x = 0.0, y = 5.0, z = 0.0;
     double z_min = -12.0, z_max = 14.0;
     double z_speed = 0.1;
     int z_direction = 1; // 1 pour monter, -1 pour descendre
