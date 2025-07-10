@@ -23,8 +23,13 @@ void moveMotor(WbDeviceTag motor, double degree) {
   // convertir les degrées en radians
   double radian = degree * M_PI / 180.0;
 
-  if (is_right_side) {
-    radian = -radian;
+  if (is_right_side > 0) {
+  // Si le moteur est du côté droit, inverser la direction
+    if (degree < 0) {
+      radian = -radian;
+    } else {
+      radian = radian * -1;
+    }
   }
 
   // Vérifier si la position est dans la limite ( max/min )
