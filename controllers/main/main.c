@@ -64,48 +64,11 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     return angles;
 }
 
-// Démo mouvements sur chaque axe & axes combinés
-void axisDemo(double time, double *x, double *y, double *z) {
-    double cycle_time = 8.0;
-    double phase = fmod(time, cycle_time * 4);
-    
-    if (phase < cycle_time) {
-        // Phase 1: Mouvement sur axe X uniquement
-        *x = 5.0 * sin(phase * 2.0 * M_PI / cycle_time);
-        *y = 8.0;
-        *z = 0.0;
-    } else if (phase < cycle_time * 2) {
-        // Phase 2: Mouvement sur axe Z uniquement
-        *x = 0.0;
-        *y = 8.0;
-        *z = 5.0 * sin((phase - cycle_time) * 2.0 * M_PI / cycle_time);
-    } else if (phase < cycle_time * 3) {
-        // Phase 3: Mouvement sur axe Y uniquement
-        *x = 0.0;
-        *y = 8.0 + 3.0 * sin((phase - cycle_time * 2) * 2.0 * M_PI / cycle_time);
-        *z = 0.0;
-    } else {
-        // Phase 4: Mouvement combiné sur tous les axes
-        double t = (phase - cycle_time * 3) * 2.0 * M_PI / cycle_time;
-        *x = 4.0 * sin(t);
-        *y = 8.0 + 2.0 * sin(t * 1.5);
-        *z = 4.0 * cos(t * 0.8);
-    }
-}
-
 int main() {
     wb_robot_init();
 
     RobotMotors motors;
     initMotor(&motors);
-
-    // Position de repos
-    moveMotor(motors.arm.ShoulderR, 0);
-    moveMotor(motors.arm.ShoulderL, 0);
-    moveMotor(motors.arm.ArmUpperR, 37);
-    moveMotor(motors.arm.ArmUpperL, 37);
-    moveMotor(motors.arm.ArmLowerR, -30);
-    moveMotor(motors.arm.ArmLowerL, -30);
 
     // Jambes stables
     moveMotor(motors.leg.LegUpperR, 20);
@@ -115,35 +78,58 @@ int main() {
     moveMotor(motors.leg.AnkleR, -30);
     moveMotor(motors.leg.AnkleL, -30);
 
-    double time = 0.0;
+    int pose_duration = 3000; // 3 secondes par pose
+    int current_pose = 0;
+    int step_count = 0;
     
-    printf("=== DÉMONSTRATION PAR AXES ===\n");
-    printf("Phase 1 (0-8s): Mouvement axe X\n");
-    printf("Phase 2 (8-16s): Mouvement axe Z\n");
-    printf("Phase 3 (16-24s): Mouvement axe Y\n");
-    printf("Phase 4 (24-32s): Mouvement combiné\n");
+    // Définition des poses (x, y, z)
+    double poses[][3] = {
+        {0.0, 10.0, 0.0},    // Pose 1: Bras tendu devant
+        {6.0, 8.0, 0.0},     // Pose 2: Bras vers la droite
+        {-6.0, 8.0, 0.0},    // Pose 3: Bras vers la gauche
+        {0.0, 8.0, 8.0},     // Pose 4: Bras vers le haut
+        {0.0, 8.0, -6.0},    // Pose 5: Bras vers le bas
+        {4.0, 12.0, 4.0},    // Pose 6: Position diagonale
+        {0.0, 6.0, 0.0}      // Pose 7: Position proche
+    };
+    int num_poses = sizeof(poses) / sizeof(poses[0]);
+    
+    printf("=== DÉMONSTRATION DE POSES SIMPLES ===\n");
+    printf("7 poses différentes, 3 secondes chacune\n");
+    printf("Pose 1: Bras tendu devant\n");
+    printf("Pose 2: Bras vers la droite\n");
+    printf("Pose 3: Bras vers la gauche\n");
+    printf("Pose 4: Bras vers le haut\n");
+    printf("Pose 5: Bras vers le bas\n");
+    printf("Pose 6: Position diagonale\n");
+    printf("Pose 7: Position proche\n\n");
 
     while (wb_robot_step(TIME_STEP) != -1) {
-        time += 0.032;
+        step_count++;
         
-        double x, y, z;
-        axisDemo(time, &x, &y, &z);
+        // Changer de pose toutes les 3 secondes
+        if (step_count >= pose_duration / TIME_STEP) {
+            current_pose = (current_pose + 1) % num_poses;
+            step_count = 0;
+            printf("Changement vers pose %d: (%.1f, %.1f, %.1f)\n", 
+                   current_pose + 1, 
+                   poses[current_pose][0], 
+                   poses[current_pose][1], 
+                   poses[current_pose][2]);
+        }
         
-        struct Angles angles = inverseKinematicARM(x, y, z);
+        // Calcul de la cinématique inverse pour la pose actuelle
+        struct Angles angles = inverseKinematicARM(poses[current_pose][0], 
+                                                   poses[current_pose][1], 
+                                                   poses[current_pose][2]);
         
+        // Application des angles aux moteurs
         moveMotor(motors.arm.ShoulderR, angles.angleEpaule);
         moveMotor(motors.arm.ShoulderL, angles.angleEpaule);
         moveMotor(motors.arm.ArmUpperR, angles.angleEpaule2);
         moveMotor(motors.arm.ArmUpperL, angles.angleEpaule2);
         moveMotor(motors.arm.ArmLowerR, angles.angleCoude);
         moveMotor(motors.arm.ArmLowerL, angles.angleCoude);
-        
-        // Affichage de la phase actuelle
-        int phase = (int)(time / 8.0) % 4;
-        if ((int)(time * 5) % 10 == 0) {
-            printf("Phase %d | Temps: %.1fs | Position: (%.1f, %.1f, %.1f)\n", 
-                   phase + 1, time, x, y, z);
-        }
     }
 
     wb_robot_cleanup();
