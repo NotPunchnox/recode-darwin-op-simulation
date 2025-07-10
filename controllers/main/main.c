@@ -28,6 +28,7 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     // y: distance latérale
 
     double distance = sqrt(y*y + z*z);
+
     if (distance > biceps + avant_bras) {
         printf("Impossible de trouver une solution, la distance est trop grande.\n");
         return angles; // Retourne les angles initiaux
@@ -38,7 +39,7 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     angles.angleCoude = 90-(180-(angle_biceps * 180.0 / M_PI));
 
     // Calculer l'angle de l'épaule
-    double a1 = (atan2(z, y) * 180 / M_PI);
+    double a1 = (atan(z/y) * 180 / M_PI);
     double a2 = acos((biceps*biceps + distance*distance - avant_bras*avant_bras) / (2 * biceps * distance));
     angles.angleEpaule = 90 - (a2 * 180.0 / M_PI) - a1;
 
@@ -100,8 +101,8 @@ int main() {
     // tête
     moveMotor(motors.head.Head, 20);
 
-    double x = 0.0, y = 0.01, z = 14;
-    double z_min = 8.0, z_max = 16.0;
+    double x = 0.0, y = 5.0, z = 14;
+    double z_min = -12.0, z_max = 12.0;
     double z_speed = 0.1;
     int z_direction = 1; // 1 pour monter, -1 pour descendre
 
