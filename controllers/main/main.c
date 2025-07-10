@@ -17,143 +17,105 @@ struct Angles {
 // Variable globale pour conserver les derniers angles valides
 struct Angles lastValidAngles = {0.0, 37.0, 0.0};
 
-// Only 2d for this time
-// Cinématique inverse
+// Fonction pour limiter les angles à des valeurs raisonnables
+struct Angles constrainAngles(struct Angles angles) {
+    angles.angleEpaule = fmax(-90.0, fmin(90.0, angles.angleEpaule));
+    angles.angleEpaule2 = fmax(0.0, fmin(90.0, angles.angleEpaule2));
+    angles.angleCoude = fmax(-150.0, fmin(0.0, angles.angleCoude));
+    return angles;
+}
+
+// Cinématique inverse 3D
 struct Angles inverseKinematicARM(double x, double y, double z) {
     struct Angles angles = lastValidAngles;
     
     double biceps = 6.0;
     double avant_bras = 12.0;
+    double distance_totale = sqrt(x*x + y*y + z*z);
 
-    // z: hauteur
-    // x: distance horizontale
-    // y: distance latérale
-
-    double distance = sqrt(y*y + z*z);
-
-    if (distance > biceps + avant_bras) {
-        // printf("Impossible de trouver une solution, la distance est trop grande.\n");
+    if (distance_totale > biceps + avant_bras || distance_totale < 2.0) {
         return lastValidAngles;
     }
 
-    if (distance < fabs(biceps - avant_bras)) {
-        // printf("Impossible de trouver une solution, la distance est trop petite.\n");
-        return lastValidAngles;
+    double distance_horizontale = sqrt(x*x + y*y);
+    
+    if (distance_horizontale > 0.001) {
+        double angle_rotation = atan2(x, y) * 180.0 / M_PI;
+        angles.angleEpaule2 = fmax(0.0, fmin(90.0, 37.0 + angle_rotation * 0.5));
+    } else {
+        angles.angleEpaule2 = 37.0;
     }
 
-    // Calculer l'angle du biceps avec vérification des bornes
-    double cos_angle_biceps = (biceps*biceps + avant_bras*avant_bras - distance*distance) / (2 * biceps * avant_bras);
-    cos_angle_biceps = fmax(-1.0, fmin(1.0, cos_angle_biceps));
-    double angle_biceps = acos(cos_angle_biceps);
-    angles.angleCoude = 90-(180-(angle_biceps * 180.0 / M_PI));
+    double distance_verticale = sqrt(distance_horizontale*distance_horizontale + z*z);
 
-    // Calculer l'angle de l'épaule avec atan2 pour gérer les quadrants
-    double a1 = atan2(y, z) * 180.0 / M_PI;
-    
-    double cos_a2 = (biceps*biceps + distance*distance - avant_bras*avant_bras) / (2 * biceps * distance);
-    cos_a2 = fmax(-1.0, fmin(1.0, cos_a2));
-    double a2 = acos(cos_a2) * 180.0 / M_PI;
-    
-    angles.angleEpaule = a2 - a1;
-    angles.angleEpaule2 = 37;
+    double cos_angle_coude = (biceps*biceps + avant_bras*avant_bras - distance_verticale*distance_verticale) / (2 * biceps * avant_bras);
+    cos_angle_coude = fmax(-1.0, fmin(1.0, cos_angle_coude));
+    double angle_coude = acos(cos_angle_coude);
+    angles.angleCoude = 90.0 - (180.0 - (angle_coude * 180.0 / M_PI));
 
-    // Sauvegarder les angles valides
+    double angle_vers_cible = atan2(z, distance_horizontale) * 180.0 / M_PI;
+    double cos_angle_epaule = (biceps*biceps + distance_verticale*distance_verticale - avant_bras*avant_bras) / (2 * biceps * distance_verticale);
+    cos_angle_epaule = fmax(-1.0, fmin(1.0, cos_angle_epaule));
+    double angle_epaule_offset = acos(cos_angle_epaule) * 180.0 / M_PI;
+    angles.angleEpaule = angle_epaule_offset - angle_vers_cible;
+
+    angles = constrainAngles(angles);
     lastValidAngles = angles;
-
     return angles;
+}
+
+// Mouvement simple en cercle
+void simpleDemo(double time, double *x, double *y, double *z) {
+    *x = 3.0 * sin(time * 0.5);
+    *y = 8.0;
+    *z = 3.0 * cos(time * 0.5);
 }
 
 int main() {
     wb_robot_init();
 
-    // Init motors
     RobotMotors motors;
     initMotor(&motors);
 
-    wb_keyboard_enable(TIME_STEP);
-
-    // Initialiser les moteurs à leur position par défaut
-
-    // épaules
+    // Position de repos
     moveMotor(motors.arm.ShoulderR, 0);
     moveMotor(motors.arm.ShoulderL, 0);
+    moveMotor(motors.arm.ArmUpperR, 37);
+    moveMotor(motors.arm.ArmUpperL, 37);
+    moveMotor(motors.arm.ArmLowerR, -30);
+    moveMotor(motors.arm.ArmLowerL, -30);
 
-    // bras supérieurs
-    moveMotor(motors.arm.ArmUpperR, 0);
-    moveMotor(motors.arm.ArmUpperL, 0);
-
-    // bras inférieurs
-    moveMotor(motors.arm.ArmLowerR, 0);
-    moveMotor(motors.arm.ArmLowerL, 0);
-
-    // bassin
-    moveMotor(motors.pelvis.PelvYR, 0);
-    moveMotor(motors.pelvis.PelvYL, 0);
-    moveMotor(motors.pelvis.PelvR, 0);
-    moveMotor(motors.pelvis.PelvL, 0);
-
-    // jambes supérieures
+    // Jambes stables
     moveMotor(motors.leg.LegUpperR, 20);
     moveMotor(motors.leg.LegUpperL, 20);
-
-    // jambes inférieures
     moveMotor(motors.leg.LegLowerR, 20);
     moveMotor(motors.leg.LegLowerL, 20);
-
-    //chevilles
     moveMotor(motors.leg.AnkleR, -30);
     moveMotor(motors.leg.AnkleL, -30);
 
-    // pieds
-    moveMotor(motors.leg.FootR, 0);
-    moveMotor(motors.leg.FootL, 0);
+    double time = 0.0;
+    
+    printf("=== DÉMONSTRATION SIMPLE ===\n");
+    printf("Mouvement en cercle des bras\n");
 
-    // cou
-    moveMotor(motors.head.Neck, 0);
-
-    // tête
-    moveMotor(motors.head.Head, 20);
-
-    double x = 0.0, y = 5.0, z = 0.0;
-    double z_min = -12.0, z_max = 14.0;
-    double z_speed = 0.1;
-    int z_direction = 1; // 1 pour monter, -1 pour descendre
-
-    // Simulation loop
     while (wb_robot_step(TIME_STEP) != -1) {
-        // Animation de z
-        z += z_speed * z_direction;
+        time += 0.032;
         
-        // Inverser la direction quand on atteint les limites
-        if (z >= z_max) {
-            z_direction = -1;
-        } else if (z <= z_min) {
-            z_direction = 1;
-        }
-
-        // Calcul de la cinématique inverse
+        double x, y, z;
+        simpleDemo(time, &x, &y, &z);
+        
         struct Angles angles = inverseKinematicARM(x, y, z);
         
-        // Appliquer les angles aux moteurs
         moveMotor(motors.arm.ShoulderR, angles.angleEpaule);
         moveMotor(motors.arm.ShoulderL, angles.angleEpaule);
-
         moveMotor(motors.arm.ArmUpperR, angles.angleEpaule2);
         moveMotor(motors.arm.ArmUpperL, angles.angleEpaule2);
-
-        moveMotor(motors.arm.ArmLowerL, angles.angleCoude);
         moveMotor(motors.arm.ArmLowerR, angles.angleCoude);
-
-        // Afficher les valeurs
-        if ((int)(z * 10) % 50 == 0) {
-            printf("z: %.2f, Angles - Epaule: %.2f, Epaule2: %.2f, Coude: %.2f\n", z, angles.angleEpaule, angles.angleEpaule2, angles.angleCoude);
-        }
-
-        int key = wb_keyboard_get_key();
-        if (key == WB_KEYBOARD_UP) {
-            moveMotor(motors.leg.LegUpperR, wb_motor_get_target_position(motors.leg.LegUpperR) * 180.0 / M_PI + 10);
-        } else if (key == WB_KEYBOARD_DOWN) {
-            moveMotor(motors.leg.LegUpperR, wb_motor_get_target_position(motors.leg.LegUpperR) * 180.0 / M_PI - 10);
+        moveMotor(motors.arm.ArmLowerL, angles.angleCoude);
+        
+        // Affichage toutes les 2 secondes
+        if ((int)(time * 10) % 20 == 0) {
+            printf("Temps: %.1fs | Position: (%.1f, %.1f, %.1f)\n", time, x, y, z);
         }
     }
 
