@@ -34,14 +34,25 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
         return angles; // Retourne les angles initiaux
     }
 
-    // Calculer l'angle du biceps
-    double angle_biceps = acos((biceps*biceps + avant_bras*avant_bras - distance*distance) / (2 * biceps * avant_bras));
+    if (distance < fabs(biceps - avant_bras)) {
+        printf("Impossible de trouver une solution, la distance est trop petite.\n");
+        return angles;
+    }
+
+    // Calculer l'angle du biceps avec vérification des bornes
+    double cos_angle_biceps = (biceps*biceps + avant_bras*avant_bras - distance*distance) / (2 * biceps * avant_bras);
+    cos_angle_biceps = fmax(-1.0, fmin(1.0, cos_angle_biceps));
+    double angle_biceps = acos(cos_angle_biceps);
     angles.angleCoude = 90-(180-(angle_biceps * 180.0 / M_PI));
 
-    // Calculer l'angle de l'épaule
-    double a1 = (atan(y/z) * 180 / M_PI);
-    double a2 = acos((biceps*biceps + distance*distance - avant_bras*avant_bras) / (2 * biceps * distance));
-    angles.angleEpaule = (a2 * 180.0 / M_PI) - a1;
+    // Calculer l'angle de l'épaule avec atan2 pour gérer les quadrants
+    double a1 = atan2(y, z) * 180.0 / M_PI;
+    
+    double cos_a2 = (biceps*biceps + distance*distance - avant_bras*avant_bras) / (2 * biceps * distance);
+    cos_a2 = fmax(-1.0, fmin(1.0, cos_a2));
+    double a2 = acos(cos_a2) * 180.0 / M_PI;
+    
+    angles.angleEpaule = a2 - a1;
 
     angles.angleEpaule2 = 37;
 
@@ -130,10 +141,9 @@ int main() {
         moveMotor(motors.arm.ArmLowerL, angles.angleCoude);
         moveMotor(motors.arm.ArmLowerR, angles.angleCoude);
 
-        // Afficher les valeurs (optionnel, peut ralentir la simulation)
-        if ((int)(z * 10) % 50 == 0) { // Afficher toutes les 50 itérations environ
-            printf("z: %.2f, Angles - Epaule: %.2f, Epaule2: %.2f, Coude: %.2f\n", 
-                   z, angles.angleEpaule, angles.angleEpaule2, angles.angleCoude);
+        // Afficher les valeurs
+        if ((int)(z * 10) % 50 == 0) {
+            printf("z: %.2f, Angles - Epaule: %.2f, Epaule2: %.2f, Coude: %.2f\n", z, angles.angleEpaule, angles.angleEpaule2, angles.angleCoude);
         }
 
         int key = wb_keyboard_get_key();
