@@ -64,11 +64,33 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     return angles;
 }
 
-// Mouvement simple en cercle
-void simpleDemo(double time, double *x, double *y, double *z) {
-    *x = 3.0 * sin(time * 0.5);
-    *y = 8.0;
-    *z = 3.0 * cos(time * 0.5);
+// Démo mouvements sur chaque axe & axes combinés
+void axisDemo(double time, double *x, double *y, double *z) {
+    double cycle_time = 8.0;
+    double phase = fmod(time, cycle_time * 4);
+    
+    if (phase < cycle_time) {
+        // Phase 1: Mouvement sur axe X uniquement
+        *x = 5.0 * sin(phase * 2.0 * M_PI / cycle_time);
+        *y = 8.0;
+        *z = 0.0;
+    } else if (phase < cycle_time * 2) {
+        // Phase 2: Mouvement sur axe Z uniquement
+        *x = 0.0;
+        *y = 8.0;
+        *z = 5.0 * sin((phase - cycle_time) * 2.0 * M_PI / cycle_time);
+    } else if (phase < cycle_time * 3) {
+        // Phase 3: Mouvement sur axe Y uniquement
+        *x = 0.0;
+        *y = 8.0 + 3.0 * sin((phase - cycle_time * 2) * 2.0 * M_PI / cycle_time);
+        *z = 0.0;
+    } else {
+        // Phase 4: Mouvement combiné sur tous les axes
+        double t = (phase - cycle_time * 3) * 2.0 * M_PI / cycle_time;
+        *x = 4.0 * sin(t);
+        *y = 8.0 + 2.0 * sin(t * 1.5);
+        *z = 4.0 * cos(t * 0.8);
+    }
 }
 
 int main() {
@@ -95,14 +117,17 @@ int main() {
 
     double time = 0.0;
     
-    printf("=== DÉMONSTRATION SIMPLE ===\n");
-    printf("Mouvement en cercle des bras\n");
+    printf("=== DÉMONSTRATION PAR AXES ===\n");
+    printf("Phase 1 (0-8s): Mouvement axe X\n");
+    printf("Phase 2 (8-16s): Mouvement axe Z\n");
+    printf("Phase 3 (16-24s): Mouvement axe Y\n");
+    printf("Phase 4 (24-32s): Mouvement combiné\n");
 
     while (wb_robot_step(TIME_STEP) != -1) {
         time += 0.032;
         
         double x, y, z;
-        simpleDemo(time, &x, &y, &z);
+        axisDemo(time, &x, &y, &z);
         
         struct Angles angles = inverseKinematicARM(x, y, z);
         
@@ -113,9 +138,11 @@ int main() {
         moveMotor(motors.arm.ArmLowerR, angles.angleCoude);
         moveMotor(motors.arm.ArmLowerL, angles.angleCoude);
         
-        // Affichage toutes les 2 secondes
-        if ((int)(time * 10) % 20 == 0) {
-            printf("Temps: %.1fs | Position: (%.1f, %.1f, %.1f)\n", time, x, y, z);
+        // Affichage de la phase actuelle
+        int phase = (int)(time / 8.0) % 4;
+        if ((int)(time * 5) % 10 == 0) {
+            printf("Phase %d | Temps: %.1fs | Position: (%.1f, %.1f, %.1f)\n", 
+                   phase + 1, time, x, y, z);
         }
     }
 
