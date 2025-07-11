@@ -14,48 +14,53 @@ struct Angles {
 struct Angles lastValidAngles = {0.0, 90.0, 0.0};
 
 struct Angles inverseKinematicARM(double x, double y, double z) {
-     struct Angles angles = lastValidAngles;
-     
-     double biceps = 6.0;
-     double avant_bras = 12.0;
-     double distance_totale = sqrt(x*x + y*y + z*z);
+    struct Angles angles = lastValidAngles;
 
-     /* Vérification de l'atteignabilité de la cible */
-     if (distance_totale > biceps + avant_bras) {
-          printf("ERREUR: Position (%.2f, %.2f, %.2f) trop éloignée (distance=%.2f, max=%.2f)\n", x, y, z, distance_totale, biceps + avant_bras);
-          return lastValidAngles;
-     }
-     
-     if (distance_totale < 2.0) {
-          printf("ERREUR: Position (%.2f, %.2f, %.2f) trop proche (distance=%.2f, min=2.0)\n", x, y, z, distance_totale);
-          return lastValidAngles;
-     }
+    // Longueurs des segments
+    double biceps = 6.0;    // Haut du bras (cm)
+    double avant_bras = 12.9; // Avant-bras (cm)
 
-     double distance_horizontale = sqrt(x*x + y*y);
-     
-     if (distance_horizontale > 0.001) {
-          double angle_rotation = atan2(x, y) * 180.0 / M_PI;
-          angles.angleEpaule2 = fmax(0.0, fmin(90.0, 37.0 + angle_rotation * 0.5));
-     } else {
-          angles.angleEpaule2 = 37.0;
-     }
+    // Calcul de la distance au point cible
+    double h = sqrt(x * x + z * z);
 
-     double distance_verticale = sqrt(distance_horizontale*distance_horizontale + z*z);
+    // Vérification de l'atteignabilité
+    double maxReach = biceps + avant_bras;  // 18.0 cm
+    double minReach = fabs(biceps - avant_bras);  // 6.0 cm
+    if (h > maxReach) {
+        printf("ERREUR: Position (%.2f, %.2f) trop éloignée (distance=%.2f, max=%.2f)\n", x, z, h, maxReach);
+        return lastValidAngles;
+    }
+    if (h < minReach) {
+        printf("ERREUR: Position (%.2f, %.2f) trop proche (distance=%.2f, min=%.2f)\n", x, z, h, minReach);
+        return lastValidAngles;
+    }
 
-     double cos_angle_coude = (biceps*biceps + avant_bras*avant_bras - distance_verticale*distance_verticale) / (2 * biceps * avant_bras);
-     cos_angle_coude = fmax(-1.0, fmin(1.0, cos_angle_coude));
-     double angle_coude = acos(cos_angle_coude);
-     angles.angleCoude = 90.0 - (180.0 - (angle_coude * 180.0 / M_PI));
+    // Calcul de l'angle initial (alpha) en radians
+    double alpha = atan2(z, x);
 
-     double angle_vers_cible = atan2(z, distance_horizontale) * 180.0 / M_PI;
-     double cos_angle_epaule = (biceps*biceps + distance_verticale*distance_verticale - avant_bras*avant_bras) / (2 * biceps * distance_verticale);
-     cos_angle_epaule = fmax(-1.0, fmin(1.0, cos_angle_epaule));
-     double angle_epaule_offset = acos(cos_angle_epaule) * 180.0 / M_PI;
-     angles.angleEpaule = angle_epaule_offset - angle_vers_cible;
+    // Calcul du premier groupe d'angles (coude vers le bas)
+    double cos_teta1_1 = (x * x + z * z + biceps * biceps - avant_bras * avant_bras) / (2 * biceps * h);
+    cos_teta1_1 = fmax(-1.0, fmin(1.0, cos_teta1_1)); // Clamping pour éviter les erreurs numériques
+    double teta1_1 = acos(cos_teta1_1) + alpha;
+    double teta2_1 = atan2((z - biceps * sin(teta1_1)) / avant_bras, (x - biceps * cos(teta1_1)) / avant_bras) - teta1_1;
 
-     lastValidAngles = angles;
-     
-     printf("Position (%.2f, %.2f, %.2f) atteinte avec angles: épaule=%.1f°, épaule2=%.1f°, coude=%.1f°\n",x, y, z, angles.angleEpaule, angles.angleEpaule2, angles.angleCoude);
-     
-     return angles;
+    // Calcul du deuxième groupe d'angles (coude vers le haut)
+    double cos_teta1_2 = (x * x + z * z + biceps * biceps - avant_bras * avant_bras) / (2 * biceps * h);
+    cos_teta1_2 = fmax(-1.0, fmin(1.0, cos_teta1_2));
+    double teta1_2 = -acos(cos_teta1_2) + alpha;
+    double teta2_2 = atan2((z - biceps * sin(teta1_2)) / avant_bras, (x - biceps * cos(teta1_2)) / avant_bras) - teta1_2;
+
+    // Stocker les angles en degrés
+    angles.angleEpaule = teta1_1 * 180.0 / M_PI;  // Première solution (coude bas)
+    angles.angleEpaule2 = 0;
+    angles.angleCoude = teta2_1 * 180.0 / M_PI;
+
+    // Mettre à jour les derniers angles valides (choisir la première solution pour l'instant)
+    lastValidAngles = angles;
+
+    // Affichage des résultats
+    printf("Position (%.2f, %.2f) atteinte avec angles (coude bas): épaule=%.1f°, coude=%.1f°\n", x, z, angles.angleEpaule, angles.angleCoude);
+    printf("Alternative (coude haut): épaule=%.1f°, coude=%.1f°\n", teta1_2 * 180.0 / M_PI, teta2_2 * 180.0 / M_PI);
+
+    return angles;
 }
