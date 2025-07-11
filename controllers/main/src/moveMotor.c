@@ -1,7 +1,5 @@
 #include <webots/motor.h>
 #include <webots/robot.h>
-#include <stdio.h>
-#include <string.h>
 
 void moveMotor(WbDeviceTag motor, double degree) {
 
