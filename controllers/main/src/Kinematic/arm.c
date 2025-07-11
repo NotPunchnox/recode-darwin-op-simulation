@@ -39,10 +39,13 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     double alpha = atan2(z, x);
 
     // Calcul du premier groupe d'angles (coude vers le bas)
+    /*
     double cos_teta1_1 = (x * x + z * z + biceps * biceps - avant_bras * avant_bras) / (2 * biceps * h);
     cos_teta1_1 = fmax(-1.0, fmin(1.0, cos_teta1_1)); // Clamping pour éviter les erreurs numériques
     double teta1_1 = acos(cos_teta1_1) + alpha;
     double teta2_1 = atan2((z - biceps * sin(teta1_1)) / avant_bras, (x - biceps * cos(teta1_1)) / avant_bras) - teta1_1;
+    */
+
 
     // Calcul du deuxième groupe d'angles (coude vers le haut)
     double cos_teta1_2 = (x * x + z * z + biceps * biceps - avant_bras * avant_bras) / (2 * biceps * h);
@@ -50,12 +53,12 @@ struct Angles inverseKinematicARM(double x, double y, double z) {
     double teta1_2 = -acos(cos_teta1_2) + alpha;
     double teta2_2 = atan2((z - biceps * sin(teta1_2)) / avant_bras, (x - biceps * cos(teta1_2)) / avant_bras) - teta1_2;
 
-    // Stocker les angles en degrés
-    angles.angleEpaule = teta1_1 * 180.0 / M_PI;  // Première solution (coude bas)
-    angles.angleEpaule2 = 0;
-    angles.angleCoude = teta2_1 * 180.0 / M_PI;
+    // Stocker les angles en degrés (utilisation de la première solution)
+    angles.angleEpaule = (teta1_2 * 180.0 / M_PI)+90;
+    angles.angleEpaule2 = 35;
+    angles.angleCoude = (teta2_2 * 180.0 / M_PI)-90;
 
-    // Mettre à jour les derniers angles valides (choisir la première solution pour l'instant)
+    // Mettre à jour les derniers angles valides
     lastValidAngles = angles;
 
     // Affichage des résultats

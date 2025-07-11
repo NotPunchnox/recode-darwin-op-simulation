@@ -8,37 +8,29 @@
 #include "src/Kinematic/kinematic.h"
 
 #define TIME_STEP 32
-#define POSE_DURATION_MS 3000
-#define POSE_DURATION_STEPS (POSE_DURATION_MS / TIME_STEP)
-
-typedef struct {
-    double x, y, z;
-} Pose3D;
-
-static const Pose3D poses[] = {
-    {14.0, 0.0, 0.0},
-    {13.0, 0.0, 0.0},
-    {12.0, 0.0, 0.0},
-    {11.0, 0.0, 0.0},
-};
-static const int num_poses = sizeof(poses) / sizeof(poses[0]);
+#define CYCLE_DURATION_MS 2000
+#define CYCLE_DURATION_STEPS (CYCLE_DURATION_MS / TIME_STEP)
 
 static void initStableLegs(const RobotMotors* motors) {
     moveMotor(motors->leg.AnkleR, -30);
     moveMotor(motors->leg.AnkleL, -30);
 }
 
-static void applyPose(const RobotMotors* motors, const Pose3D* pose, int pose_index) {
-    printf("Pose %d: (%.1f, %.1f, %.1f)\n", pose_index + 1, pose->x, pose->y, pose->z);
+static void applyArmMovement(const RobotMotors* motors, double z_angle) {
+    printf("Z angle: %.1f degrees\n", z_angle);
     
-    struct Angles angles = inverseKinematicARM(pose->x, pose->y, pose->z);
+    // Position fixe pour X et Y, seul Z varie
+    double x = 0.0;  // Position fixe
+    double y = 0.0;   // Position fixe
     
-    moveMotor(motors->arm.ShoulderR, angles.angleEpaule*-1);
-    moveMotor(motors->arm.ShoulderL, angles.angleEpaule*-1);
+    struct Angles angles = inverseKinematicARM(x, y, z_angle);
+    
+    moveMotor(motors->arm.ShoulderR, angles.angleEpaule);
+    moveMotor(motors->arm.ShoulderL, angles.angleEpaule);
     moveMotor(motors->arm.ArmUpperR, angles.angleEpaule2);
     moveMotor(motors->arm.ArmUpperL, angles.angleEpaule2);
-    moveMotor(motors->arm.ArmLowerR, angles.angleCoude*-1);
-    moveMotor(motors->arm.ArmLowerL, angles.angleCoude*-1);
+    moveMotor(motors->arm.ArmLowerR, angles.angleCoude-90);
+    moveMotor(motors->arm.ArmLowerL, angles.angleCoude-90);
 }
 
 int main() {
@@ -48,26 +40,25 @@ int main() {
     initMotor(&motors);
     initStableLegs(&motors);
 
-    int current_pose = 0;
     int step_count = 0;
-    bool pose_applied = false;
+    double z_min = -12.0;  // Angle Z minimum
+    double z_max = 12.0;   // Angle Z maximum
     
-    printf("Démarrage séquence de %d poses...\n", num_poses);
+    printf("Démarrage mouvement cyclique des bras...\n");
 
-    while (wb_robot_step(TIME_STEP) != -1 && current_pose < num_poses) {
-        if (!pose_applied) {
-            applyPose(&motors, &poses[current_pose], current_pose);
-            pose_applied = true;
-        }
+    while (wb_robot_step(TIME_STEP) != -1) {
+        // Calcul de l'angle Z en fonction du temps (mouvement sinusoïdal)
+        double progress = (double)step_count / CYCLE_DURATION_STEPS;
+        double z_angle = z_min + (z_max - z_min) * (sin(2 * M_PI * progress) + 1) / 2;
         
-        if (++step_count >= POSE_DURATION_STEPS) {
-            current_pose++;
-            step_count = 0;
-            pose_applied = false;
+        applyArmMovement(&motors, z_angle);
+        
+        step_count++;
+        if (step_count >= CYCLE_DURATION_STEPS) {
+            step_count = 0;  // Reset pour boucle continue
         }
     }
     
-    printf("Séquence terminée !\n");
     wb_robot_cleanup();
     return 0;
 }

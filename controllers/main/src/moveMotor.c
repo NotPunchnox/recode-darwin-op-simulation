@@ -32,6 +32,7 @@ void moveMotor(WbDeviceTag motor, double degree) {
   }
 
   // Vérifier si la position est dans la limite ( max/min )
+  
   double max_pos = wb_motor_get_max_position(motor);
   double min_pos = wb_motor_get_min_position(motor);
 
