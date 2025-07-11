@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <math.h>
 
+// Structure pour stocker les angles du bras
+struct Angles {
+    double angleEpaule;
+    double angleEpaule2;
+    double angleCoude;
+};
 
 // Variable globale pour conserver les derniers angles valides
 struct Angles lastValidAngles = {0.0, 90.0, 0.0};
