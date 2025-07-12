@@ -3,67 +3,67 @@
 #include <stdio.h>
 #include <math.h>
 
-// Definition de la structure Angles
+// Structure pour les angles
 struct Angles {
-    double angleEpaule;
-    double angleEpaule2;
-    double angleCoude;
+    double angleEpaule;   // Shoulder yaw (degrees)
+    double angleEpaule2;  // Shoulder pitch (degrees)
+    double angleCoude;    // Elbow pitch (degrees)
 };
 
 // Variable globale pour conserver les derniers angles valides
-struct Angles lastValidAngles = {0.0, 90.0, 0.0};
+struct Angles lastValidAngles = {0.0, 90.0, 90.0};
 
+// Paramètres des longueurs du bras en cm
+const double Ltx = 12.22;  // Offset épaule (122.2 mm = 12.22 cm)
+const double L2 = 6.0;     // Haut du bras (60 mm = 6 cm)
+const double Ll = 12.9;    // Avant-bras (129 mm = 12.9 cm)
+
+
+// Fonction de cinématique inverse
 struct Angles inverseKinematicARM(double x, double y, double z) {
     struct Angles angles = lastValidAngles;
 
-    // Longueurs des segments
-    double biceps = 6.0;    // Haut du bras (cm)
-    double avant_bras = 12.9; // Avant-bras (cm)
+    // Calcul de la distance horizontale (x avant, y latéral)
+    double r = sqrt(x * x + y * y);
+    double h = z - Ltx; // Hauteur relative à l'articulation de l'épaule
 
-    // Calcul de la distance au point cible
-    double h = sqrt(x * x + z * z);
+    // Distance totale depuis l'épaule
+    double D = sqrt(r * r + h * h);
 
-    // Vérification de l'atteignabilité
-    double maxReach = biceps + avant_bras;  // 18.0 cm
-    double minReach = fabs(biceps - avant_bras);  // 6.0 cm
-    if (h > maxReach) {
-        printf("ERREUR: Position (%.2f, %.2f) trop éloignée (distance=%.2f, max=%.2f)\n", x, z, h, maxReach);
-        return lastValidAngles;
-    }
-    if (h < minReach) {
-        printf("ERREUR: Position (%.2f, %.2f) trop proche (distance=%.2f, min=%.2f)\n", x, z, h, minReach);
+    // Vérification de la portée en cm
+    double maxReach = L2 + Ll; // 18.9 cm
+    double minReach = fabs(L2 - Ll); // 6.9 cm
+    if (D > maxReach || D < minReach) {
+        printf("ERREUR: Position (%.2f, %.2f, %.2f cm) hors portée (max=%.2f cm, min=%.2f cm)\n",
+               x, y, z, maxReach, minReach);
         return lastValidAngles;
     }
 
-    // Calcul de l'angle initial (alpha) en radians
-    double alpha = atan2(z, x);
+    // Calcul de theta1 (shoulder yaw)
+    double theta1 = atan2(y, x) * 180.0 / M_PI; // Angle par rapport à l'axe x
+    angles.angleEpaule = 180 - theta1;
 
-    // Calcul du premier groupe d'angles (coude vers le bas)
-    /*
-    double cos_teta1_1 = (x * x + z * z + biceps * biceps - avant_bras * avant_bras) / (2 * biceps * h);
-    cos_teta1_1 = fmax(-1.0, fmin(1.0, cos_teta1_1)); // Clamping pour éviter les erreurs numériques
-    double teta1_1 = acos(cos_teta1_1) + alpha;
-    double teta2_1 = atan2((z - biceps * sin(teta1_1)) / avant_bras, (x - biceps * cos(teta1_1)) / avant_bras) - teta1_1;
-    */
+    // Calcul de theta2 (shoulder pitch) et theta3 (elbow pitch)
+    double cos_theta3 = (D * D - L2 * L2 - Ll * Ll) / (2 * L2 * Ll);
+    cos_theta3 = fmax(-1.0, fmin(1.0, cos_theta3)); // Clamping
+    double theta3_rad = acos(cos_theta3); // Angle du coude en radians
+    double theta3 = theta3_rad * 180.0 / M_PI;
 
+    // Calcul de theta2 (shoulder pitch)
+    double beta = atan2(h, r) * 180.0 / M_PI;
+    double alpha = acos((L2 * L2 + D * D - Ll * Ll) / (2 * L2 * D)) * 180.0 / M_PI;
+    double theta2 = beta - alpha;
 
-    // Calcul du deuxième groupe d'angles (coude vers le haut)
-    double cos_teta1_2 = (x * x + z * z + biceps * biceps - avant_bras * avant_bras) / (2 * biceps * h);
-    cos_teta1_2 = fmax(-1.0, fmin(1.0, cos_teta1_2));
-    double teta1_2 = -acos(cos_teta1_2) + alpha;
-    double teta2_2 = atan2((z - biceps * sin(teta1_2)) / avant_bras, (x - biceps * cos(teta1_2)) / avant_bras) - teta1_2;
-
-    // Stocker les angles en degrés (utilisation de la première solution)
-    angles.angleEpaule = (teta1_2 * 180.0 / M_PI)+90;
-    angles.angleEpaule2 = 35;
-    angles.angleCoude = (teta2_2 * 180.0 / M_PI)-90;
+    // Ajustement des angles pour correspondre à votre convention
+    angles.angleEpaule2 = theta2 + 90.0 + 37; // Offset +90°
+    angles.angleCoude = theta3 - 90.0;   // Offset -90°
 
     // Mettre à jour les derniers angles valides
     lastValidAngles = angles;
 
     // Affichage des résultats
-    printf("Position (%.2f, %.2f) atteinte avec angles (coude bas): épaule=%.1f°, coude=%.1f°\n", x, z, angles.angleEpaule, angles.angleCoude);
-    printf("Alternative (coude haut): épaule=%.1f°, coude=%.1f°\n", teta1_2 * 180.0 / M_PI, teta2_2 * 180.0 / M_PI);
+    printf("Position (%.2f, %.2f, %.2f cm) atteinte avec angles: épaule=%.1f°, épaule2=%.1f°, coude=%.1f°\n",
+           x, y, z, angles.angleEpaule, angles.angleEpaule2, angles.angleCoude);
 
     return angles;
 }

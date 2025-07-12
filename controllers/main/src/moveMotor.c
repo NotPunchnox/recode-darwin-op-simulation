@@ -36,6 +36,12 @@ void moveMotor(WbDeviceTag motor, double degree) {
   double max_pos = wb_motor_get_max_position(motor);
   double min_pos = wb_motor_get_min_position(motor);
 
+  if (radian > max_pos) {
+    wb_motor_set_position(motor, max_pos);
+  } else if (radian < min_pos) {
+    wb_motor_set_position(motor, min_pos);
+  }
+
   if (radian > max_pos || radian < min_pos) {
     printf("Error: Position out of bounds. Max: %f, Min: %f, Requested degree: %f, Requested radian: %f\n", 
       (180 / M_PI) * max_pos,
@@ -45,6 +51,9 @@ void moveMotor(WbDeviceTag motor, double degree) {
       
     return;
   }
+
+  // Afficher la position demandée
+  printf("Moving motor to position: %f degrees (%f radians)\n", degree, radian);
 
 
   // Positionner le moteur
