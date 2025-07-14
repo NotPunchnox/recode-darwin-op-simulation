@@ -21,6 +21,6 @@ extern struct Angles lastValidAngles;
 struct Angles constrainAngles(struct Angles angles);
 
 // Fonction de cinématique inverse pour le bras
-struct Angles inverseKinematicARM(double x, double y, double z, char unit);
+struct Angles inverseKinematicARM(double x, double y, double z);
 
 #endif
